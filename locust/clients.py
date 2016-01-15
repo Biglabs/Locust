@@ -115,9 +115,9 @@ class HttpSession(requests.Session):
         # record the consumed time
         request_meta["response_time"] = int((time.time() - request_meta["start_time"]) * 1000)
         
-    
         request_meta["name"] = name or (response.history and response.history[0] or response).request.path_url
-        
+        request_meta["name"] = str(urlparse(url).port) + request_meta["name"]
+
         # get the length of the content, but if the argument stream is set to True, we take
         # the size from the content-length header, in order to not trigger fetching of the body
         if kwargs.get("stream", False):

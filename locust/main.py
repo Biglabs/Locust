@@ -228,6 +228,15 @@ def parse_options():
         help="show program's version number and exit"
     )
 
+    parser.add_option(
+        '--outputfile',
+        action='store',
+        type='str',
+        dest='outputfile',
+        default=os.getcwd() +'/'+ 'result.log',
+        help="Path to output file. If not set outcome will go to stdout/stderr",
+    )
+
     # Finalize
     # Return three-tuple of parser + the output from parse_args (opt obj, args)
     opts, args = parser.parse_args()
@@ -415,7 +424,7 @@ def main():
     
     if not options.only_summary and (options.print_stats or (options.no_web and not options.slave)):
         # spawn stats printing greenlet
-        gevent.spawn(stats_printer)
+        gevent.spawn(stats_printer(options.outputfile))
     
     def shutdown(code=0):
         """
@@ -424,10 +433,10 @@ def main():
         logger.info("Shutting down (exit code %s), bye." % code)
 
         events.quitting.fire()
-        print_stats(runners.locust_runner.request_stats)
-        print_percentile_stats(runners.locust_runner.request_stats)
+        print_stats(runners.locust_runner.request_stats, outputfile)
+        print_percentile_stats(runners.locust_runner.request_stats, outputfile)
 
-        print_error_report()
+        print_error_report(outputfile)
         sys.exit(code)
     
     # install SIGTERM handler

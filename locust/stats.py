@@ -448,9 +448,14 @@ events.report_to_master += on_report_to_master
 events.slave_report += on_slave_report
 
 
-def print_stats(stats):
+def print_stats(stats, outputfile):
     console_logger.info((" %-" + str(STATS_NAME_WIDTH) + "s %7s %12s %7s %7s %7s  | %7s %7s") % ('Name', '# reqs', '# fails', 'Avg', 'Min', 'Max', 'Median', 'req/s'))
     console_logger.info("-" * (80 + STATS_NAME_WIDTH))
+
+    f = open(outputfile, 'a')
+    f.write((" %-" + str(STATS_NAME_WIDTH) + "s %7s %12s %7s %7s %7s  | %7s %7s") % ('Name', '# reqs', '# fails', 'Avg', 'Min', 'Max', 'Median', 'req/s'))
+    f.write("-" * (80 + STATS_NAME_WIDTH))
+
     total_rps = 0
     total_reqs = 0
     total_failures = 0
@@ -459,8 +464,11 @@ def print_stats(stats):
         total_rps += r.current_rps
         total_reqs += r.num_requests
         total_failures += r.num_failures
+        f.write('\n' + str(r))
         console_logger.info(r)
+        
     console_logger.info("-" * (80 + STATS_NAME_WIDTH))
+    f.write("-" * (80 + STATS_NAME_WIDTH))
 
     try:
         fail_percent = (total_failures/float(total_reqs))*100
@@ -469,35 +477,61 @@ def print_stats(stats):
 
     console_logger.info((" %-" + str(STATS_NAME_WIDTH) + "s %7d %12s %42.2f") % ('Total', total_reqs, "%d(%.2f%%)" % (total_failures, fail_percent), total_rps))
     console_logger.info("")
+    f.write((" %-" + str(STATS_NAME_WIDTH) + "s %7d %12s %42.2f") % ('Total', total_reqs, "%d(%.2f%%)" % (total_failures, fail_percent), total_rps))
+    f.write("")
 
-def print_percentile_stats(stats):
+def print_percentile_stats(stats, outputfile):
     console_logger.info("Percentage of the requests completed within given times")
     console_logger.info((" %-" + str(STATS_NAME_WIDTH) + "s %8s %6s %6s %6s %6s %6s %6s %6s %6s %6s") % ('Name', '# reqs', '50%', '66%', '75%', '80%', '90%', '95%', '98%', '99%', '100%'))
     console_logger.info("-" * (80 + STATS_NAME_WIDTH))
+
+    f = open(path, 'a')
+    f.write("\n Percentage of the requests completed within given times")
+    f.write((" %-" + str(STATS_NAME_WIDTH) + "s %8s %6s %6s %6s %6s %6s %6s %6s %6s %6s") % ('Name', '# reqs', '50%', '66%', '75%', '80%', '90%', '95%', '98%', '99%', '100%'))
+    f.write("-" * (80 + STATS_NAME_WIDTH))
+
     for key in sorted(stats.iterkeys()):
         r = stats[key]
         if r.response_times:
             console_logger.info(r.percentile())
     console_logger.info("-" * (80 + STATS_NAME_WIDTH))
     
+    f.write("-" * (80 + STATS_NAME_WIDTH))
     total_stats = global_stats.aggregated_stats()
     if total_stats.response_times:
         console_logger.info(total_stats.percentile())
-    console_logger.info("")
+        f.write.info(total_stats.percentile())
 
-def print_error_report():
+    console_logger.info("")
+    f.write("")
+
+def print_error_report(outputfile):
     if not len(global_stats.errors):
         return
+    
+    f = open(path, 'a')
+    f.write("Error report")   
+    f.write(" %-18s %-100s" % ("# occurences", "Error")) 
+    f.write("-" * (80 + STATS_NAME_WIDTH))
+
     console_logger.info("Error report")
     console_logger.info(" %-18s %-100s" % ("# occurences", "Error"))
     console_logger.info("-" * (80 + STATS_NAME_WIDTH))
     for error in global_stats.errors.itervalues():
         console_logger.info(" %-18i %-100s" % (error.occurences, error.to_name()))
+        f.write(" %-18i %-100s" % (error.occurences, error.to_name()))
     console_logger.info("-" * (80 + STATS_NAME_WIDTH))
     console_logger.info("")
+    f.write("-" * (80 + STATS_NAME_WIDTH))
+    f.write("")
 
-def stats_printer():
+def stats_printer(outputfile):
     from runners import locust_runner
+    f = open(outputfile, 'a')
+    f.truncate()
+    f.write("\n")
+    f.write("------------------     START NEW PERFORMANCE TEST    -------------------")
+    f.write("\n")
     while True:
-        print_stats(locust_runner.request_stats)
+        print_stats(locust_runner.request_stats, outputfile)
         gevent.sleep(2)
